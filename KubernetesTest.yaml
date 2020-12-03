@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+
+kind: Deployment
+
+metadata:
+  #Oriignal name of the Deployemnt
+  name: clusterip-deployment
+  
+
+spec:
+  selector: #app it is refrencing  
+    matchLabels:
+     app: clusterip-pod
+  replicas: 1
+
+  template: #template for the pods.  # This is the pod section
+     metadata: 
+        labels: 
+            app: clusterip-pod
+            creation_method: manual
+            env: Production
+
+     spec:  #This is the container section
+      containers:
+
+       - name: clusterip-app
+                
+         image: jokoyoski/clusterip:v2
+
+         env: 
+           - name: url__Url
+             value : http://10.101.79.196:80/values    #service ip
+          
+         livenessProbe:
+            httpGet:
+               path: /weatherforecast
+               port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 15
+         ports:
+         - containerPort: 80
+           protocol: TCP
+         resources:
+           limits:
+             cpu: 500m
+             memory: 1Gi
+           requests:
+            cpu: 100m
+            memory: 256Mi
+
+            
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: clusterip-service
+spec:
+  ports:
+  - port: 80      #port the pod is listening to  
+    nodePort: 30083    # one port from the kubernetes 
+  selector: 
+    app: clusterip-pod 
+  
+  type: NodePort  
